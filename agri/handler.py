@@ -12,5 +12,6 @@ def getWeather(locationInfo : Schemas.LocationInfo):
         return response.json()
     else:
         return response.json()
+
 # def nameToLocationInfo(locationName : str):
 #
