@@ -60,6 +60,3 @@ async def createAccount(newUserInfo : InputSchemas.accountCreationInfo, db: Sess
 async def get_weather(locationInfo : Schemas.LocationInfo):
     return Handler.getWeather(locationInfo)
 
-@app.get("/test")
-async def test():
-    return {}
