@@ -1,4 +1,6 @@
-from fastapi import FastAPI, Depends
+import json
+
+from fastapi import FastAPI, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
@@ -60,3 +62,18 @@ async def createAccount(newUserInfo : InputSchemas.accountCreationInfo, db: Sess
 async def get_weather(locationInfo : Schemas.LocationInfo):
     return Handler.getWeather(locationInfo)
 
+@app.get("/getInnerContent")
+async def getInnerContent(context : str, language :str = "en"):
+
+    if language == "en":
+        response = json.loads(open("database/en.json", "r")).get(context)
+        if response is None:
+            return Response.ErrorMessage(message="something went wrong", category="error")
+        return response
+    if language == "bn":
+        response = json.loads(open("database/bn.json", "r")).get(context)
+        if response is None:
+            return Response.ErrorMessage(message="something went wrong", category="error")
+        return response
+    else:
+        return Response.ErrorMessage(message="something went wrong", category="error")
