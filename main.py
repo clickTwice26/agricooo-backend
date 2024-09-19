@@ -62,18 +62,10 @@ async def createAccount(newUserInfo : InputSchemas.accountCreationInfo, db: Sess
 async def get_weather(locationInfo : Schemas.LocationInfo):
     return Handler.getWeather(locationInfo)
 
-@app.get("/getInnerContent")
-async def getInnerContent(context : str, language :str = "en"):
+@app.get("/getLanguagePack")
+async def getInnerContent(language :str = "en"):
 
-    if language == "en":
-        response = json.loads(open("languages/en.json", "r").read()).get(context)
-        if response is None:
-            return Response.ErrorMessage(message="something went wrong", category="error")
-        return response
-    if language == "bn":
-        response = json.loads(open("languages/bn.json", "r").read()).get(context)
-        if response is None:
-            return Response.ErrorMessage(message="something went wrong", category="error")
-        return response
+    if language not in ["en", "bn"]:
+        return Response.ErrorMessage(message="invalid language", category="warning")
     else:
-        return Response.ErrorMessage(message="language doesn't support", category="error")
+        return json.loads(open(f"languages/{language}.json", "r").read())
