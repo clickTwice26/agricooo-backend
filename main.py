@@ -66,12 +66,12 @@ async def get_weather(locationInfo : Schemas.LocationInfo):
 async def getInnerContent(context : str, language :str = "en"):
 
     if language == "en":
-        response = json.loads(open("database/en.json", "r")).get(context)
+        response = json.loads(open("database/en.json", "r").read()).get(context)
         if response is None:
             return Response.ErrorMessage(message="something went wrong", category="error")
         return response
     if language == "bn":
-        response = json.loads(open("database/bn.json", "r")).get(context)
+        response = json.loads(open("database/bn.json", "r").read()).get(context)
         if response is None:
             return Response.ErrorMessage(message="something went wrong", category="error")
         return response
