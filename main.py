@@ -66,6 +66,6 @@ async def get_weather(locationInfo : Schemas.LocationInfo):
 async def getInnerContent(language :str = "en"):
 
     if language not in ["en", "bn"]:
-        return Response.ErrorMessage(message="invalid language", category="warning")
+        return Response.ErrorMessage(errorMessage="invalid language", category="warning")
     else:
         return json.loads(open(f"languages/{language}.json", "r").read())
