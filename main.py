@@ -61,13 +61,14 @@ def tokenCreation(db: Depends(get_db), **kwargs) -> Tuple[bool, str]:
         db.commit()
         return True, tokenStr
     except Exception as error:
+        print(error)
         db.rollback()
     finally:
         db.close()
     return False, "token not created"
 
 
-def tokenValid(apiToken : str, db: Depends(get_db)) -> Tuple[bool, str]:
+def tokenVerify(apiToken : str, db: Depends(get_db)) -> Tuple[bool, str]:
     tokenInfo = db.session.query(ApiToken).filter(ApiToken.tokenStr == apiToken).first()
     if tokenInfo is None:
         return False, "token not found"

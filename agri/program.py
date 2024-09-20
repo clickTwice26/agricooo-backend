@@ -71,7 +71,7 @@ def getAccessToken():
 def getTid(criperStr : str = "akjdhkjahsdjhajshdjh123qeoqwpeoqwie@asdax"):
     return "".join(random.choices(criperStr, k=10))
 
-def addedTime(days : int, startTime : str) -> str:
+def addedTime(days : int, startTime : str = ctime("date")) -> str:
     date_str = startTime
     date_format = "%d/%m/%y"
     date_obj = datetime.strptime(date_str, date_format)
