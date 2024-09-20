@@ -3,6 +3,7 @@ from typing import Literal
 
 import agri.constants as Constants
 
+
 class WelcomeMessage(BaseModel):
     message : str = "welcome to agricooo"
     versionNo : float = Constants.versionNo
@@ -15,3 +16,7 @@ class ErrorMessage(BaseModel):
 class FlashMessage(BaseModel):
     message : str = "Something went wrong"
     category : Literal["info", "error", "success", "warning"] | None  = "info"
+
+class aiTextResponse(BaseModel):
+    replyStr : str = "no reply given"
+    chatId : str | None = None

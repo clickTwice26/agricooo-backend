@@ -68,6 +68,18 @@ def uIdGen(cripStr : str):
     return "".join(random.choices(cripStr, k=10))
 def getAccessToken():
     return str(uuid.uuid4())
+def getTid(criperStr : str = "akjdhkjahsdjhajshdjh123qeoqwpeoqwie@asdax"):
+    return "".join(random.choices(criperStr, k=10))
+
+def addedTime(days : int, startTime : str) -> str:
+    date_str = startTime
+    date_format = "%d/%m/%y"
+    date_obj = datetime.strptime(date_str, date_format)
+    new_date = date_obj + timedelta(days=days)
+    return str(new_date.strftime(date_format))
+
 
 if __name__ == "__main__":
-    uIdGen("Salman Shariar 01232123223 example@gmail.com")
+    # uIdGen("Salman Shariar 01232123223 example@gmail.com")
+    print(ctime("date"))
+    print(addedTime(10, "25/09/24"))

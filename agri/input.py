@@ -20,3 +20,8 @@ class accountCreationInfo(BaseModel):
             raise ValueError("provide a valid email address")
         else:
             return value
+
+class aiReplyInput(BaseModel):
+    prompt : str
+    chatId : str | None = None
+    accessToken : str

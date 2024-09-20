@@ -33,4 +33,12 @@ class ApiToken(Base):
     useCount = Column(Integer, nullable=False, default=0)
 
 
+class aiResponse(Base):
+    __tablename__ = 'aiResponse'
+    id = Column(Integer, primary_key=True)
+    accessToken = Column(String(100), unique=False, nullable=False)
+    chatId = Column(String(100), unique=False, nullable=True)
+    creationTime = Column(String(200), unique=False, nullable=True)
+    promptStr = Column(String(1000), unique=False, nullable=True)
+
 

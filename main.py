@@ -1,11 +1,12 @@
 import json
-
+from email.policy import default
+from typing import Tuple
 from fastapi import FastAPI, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from agri.models import Base, User, ApiToken
-from agri.program import uIdGen, getAccessToken
+from agri.program import uIdGen, getAccessToken, addedTime
 
 import agri.response as Response
 import agri.models as Models
@@ -36,6 +37,41 @@ def get_db():
         yield db
     finally:
         db.close()
+
+def userVerify(accessToken : str, db: Depends(get_db)) -> Tuple[bool, str]:
+    userInfo = db.session.query(User).filter(User.accessToken == accessToken).first()
+    if userInfo is None:
+        return False, "user not found"
+    if userInfo.accountStatus != "active":
+        return False, "account is not active"
+    return True, "verification success"
+
+def tokenCreation(db: Depends(get_db), **kwargs) -> Tuple[bool, str]:
+    try:
+        tokenQuant = kwargs
+        expireTime = addedTime(tokenQuant.get("expireTime", 10))
+        uId = tokenQuant.get("uId", "system")
+        tokenStr = getAccessToken()
+        newToken = ApiToken(
+            expireTime=expireTime,
+            uId=uId,
+            tokenStr=tokenStr
+        )
+        db.add(newToken)
+        db.commit()
+        return True, tokenStr
+    except Exception as error:
+        db.rollback()
+    finally:
+        db.close()
+    return False, "token not created"
+
+
+def tokenValid(apiToken : str, db: Depends(get_db)) -> Tuple[bool, str]:
+    tokenInfo = db.session.query(ApiToken).filter(ApiToken.tokenStr == apiToken).first()
+    if tokenInfo is None:
+        return False, "token not found"
+
 @app.get("/")
 async def root():
     return Response.WelcomeMessage()
@@ -52,7 +88,8 @@ async def createAccount(newUserInfo : InputSchemas.accountCreationInfo, db: Sess
         db.add(newUser)
         try:
             db.commit()
-            return Response.FlashMessage(message="account created", category="success")
+            tokenCreated, tokenStr = tokenCreation(db, uId=uId)
+            return Response.FlashMessage(message=f"account created {tokenStr}", category="success")
 
         except Exception as error:
             return Response.ErrorMessage(errorMessage=f"database error {error}", errorType="error", errorCode=1)
@@ -62,6 +99,9 @@ async def createAccount(newUserInfo : InputSchemas.accountCreationInfo, db: Sess
 async def get_weather(locationInfo : Schemas.LocationInfo):
     return Handler.getWeather(locationInfo)
 
+@app.post("/chatWithAi")
+async def getReply(promptInfo : InputSchemas.aiReplyInput):
+    return Response.aiTextResponse(replyStr=Handler.gemResponse(promptInfo.prompt))
 @app.get("/getLanguagePack")
 async def getInnerContent(language :str = "en"):
 
