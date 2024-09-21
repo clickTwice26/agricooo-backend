@@ -118,6 +118,7 @@ async def getReply(promptInfo : InputSchemas.aiReplyInput, db: Session = Depends
             promptHistory : list = []
             for i in chats:
                 promptHistory.append(i.promptStr)
+            promptHistory = list(set(promptHistory))
             promptInfo.prompt = "\n".join(promptHistory)
             print(promptHistory)
         aiReply : str = Handler.gemResponse(promptInfo.prompt)
