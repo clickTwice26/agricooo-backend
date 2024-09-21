@@ -5,8 +5,8 @@ from fastapi import FastAPI, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
-from agri.models import Base, User, ApiToken
-from agri.program import uIdGen, getAccessToken, addedTime
+from agri.models import Base, User, ApiToken, aiResponse
+from agri.program import *
 
 import agri.response as Response
 import agri.models as Models
@@ -39,7 +39,7 @@ def get_db():
         db.close()
 
 def userVerify(accessToken : str, db: Depends(get_db)) -> Tuple[bool, str]:
-    userInfo = db.session.query(User).filter(User.accessToken == accessToken).first()
+    userInfo = db.query(User).filter(User.accessToken == accessToken).first()
     if userInfo is None:
         return False, "user not found"
     if userInfo.accountStatus != "active":
@@ -69,9 +69,10 @@ def tokenCreation(db: Depends(get_db), **kwargs) -> Tuple[bool, str]:
 
 
 def tokenVerify(apiToken : str, db: Depends(get_db)) -> Tuple[bool, str]:
-    tokenInfo = db.session.query(ApiToken).filter(ApiToken.tokenStr == apiToken).first()
+    tokenInfo = db.query(ApiToken).filter(ApiToken.tokenStr == apiToken).first()
     if tokenInfo is None:
         return False, "token not found"
+
 
 @app.get("/")
 async def root():
@@ -90,8 +91,8 @@ async def createAccount(newUserInfo : InputSchemas.accountCreationInfo, db: Sess
         try:
             db.commit()
             tokenCreated, tokenStr = tokenCreation(db, uId=uId)
-            return Response.FlashMessage(message=f"account created {tokenStr}", category="success")
-
+            # return Response.FlashMessage(message=f"account created {tokenStr}", category="success")
+            return Response.newSuccessAccount(status="success", accessToken=accessToken, apiToken=tokenStr)
         except Exception as error:
             return Response.ErrorMessage(errorMessage=f"database error {error}", errorType="error", errorCode=1)
     except Exception as error:
@@ -100,9 +101,37 @@ async def createAccount(newUserInfo : InputSchemas.accountCreationInfo, db: Sess
 async def get_weather(locationInfo : Schemas.LocationInfo):
     return Handler.getWeather(locationInfo)
 
+
+
 @app.post("/chatWithAi")
-async def getReply(promptInfo : InputSchemas.aiReplyInput):
-    return Response.aiTextResponse(replyStr=Handler.gemResponse(promptInfo.prompt))
+async def getReply(promptInfo : InputSchemas.aiReplyInput, db: Session = Depends(get_db)):
+    if userVerify(promptInfo.accessToken, db):
+        if promptInfo.chatId == None:
+            chats = ""
+        else:
+            chats = db.query(aiResponse).filter(aiResponse.chatId == promptInfo.chatId).all()
+        currentPrompt = promptInfo.prompt
+        if len(chats) == 0:
+            newChatId : str= getUuid()
+            promptInfo.chatId = newChatId
+        else:
+            promptHistory : list = []
+            for i in chats:
+                promptHistory.append(i.promptStr)
+            promptInfo.prompt = "\n".join(promptHistory)
+            print(promptHistory)
+        aiReply : str = Handler.gemResponse(promptInfo.prompt)
+        newAiResponse = aiResponse(
+            accessToken=promptInfo.accessToken,
+            chatId=promptInfo.chatId,
+            creationTime=ctime("both"),
+            promptStr= currentPrompt
+        )
+        db.add(newAiResponse)
+        db.commit()
+        return Response.aiTextResponse(replyStr=aiReply, chatId=promptInfo.chatId)
+    else:
+        return Response.ErrorMessage(errorMessage="invalid access token", errorType="error", errorCode=99)
 @app.get("/getLanguagePack")
 async def getInnerContent(language :str = "en"):
 
@@ -110,3 +139,4 @@ async def getInnerContent(language :str = "en"):
         return Response.ErrorMessage(errorMessage="invalid language", category="warning")
     else:
         return json.loads(open(f"languages/{language}.json", "r").read())
+

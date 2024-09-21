@@ -20,3 +20,8 @@ class FlashMessage(BaseModel):
 class aiTextResponse(BaseModel):
     replyStr : str = "no reply given"
     chatId : str | None = None
+
+class newSuccessAccount(BaseModel):
+    status : str | None = "failed"
+    accessToken : str | None = "null"
+    apiToken : str | None = "null"
