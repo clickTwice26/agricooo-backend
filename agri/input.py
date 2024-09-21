@@ -25,3 +25,7 @@ class aiReplyInput(BaseModel):
     prompt : str
     chatId : str | None = None
     accessToken : str
+
+class seekUserInfo(BaseModel):
+    accessToken: str
+

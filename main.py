@@ -141,3 +141,10 @@ async def getInnerContent(language :str = "en"):
     else:
         return json.loads(open(f"languages/{language}.json", "r").read())
 
+@app.post("/userInfo")
+async def getUserinfo(acToken: InputSchemas.seekUserInfo, db: Session = Depends(get_db)):
+    checkExist = db.query(User).filter(User.accessToken == acToken.accessToken).first()
+    if checkExist:
+        return Response.UserinfoResponse(**checkExist.__dict__)
+    else:
+        return Response.FlashMessage(message="account does not exist", category="warning")

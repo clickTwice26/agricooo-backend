@@ -25,3 +25,8 @@ class newSuccessAccount(BaseModel):
     status : str | None = "failed"
     accessToken : str | None = "null"
     apiToken : str | None = "null"
+class UserinfoResponse(BaseModel):
+    fullName : str
+    email : str
+    phoneNumber: str
+    currentLocation : str |None = None
