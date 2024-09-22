@@ -148,8 +148,9 @@ async def getReply(promptInfo : InputSchemas.aiReplyInput, db: Session = Depends
 
             promptHistory = list(set(promptHistory))
             promptInfo.prompt = "\n".join(promptHistory)
-            print(promptHistory)
-        promptInfo = f"My name is {userinfo.fullName}\n" + promptInfo
+            # print(promptHistory)
+        promptInfo.prompt = f"Just remember my name {userinfo.fullName}\n" + promptInfo.prompt
+        # print(promptInfo.prompt)
         aiReply : str = Handler.gemResponse(promptInfo.prompt)
         newAiResponse = aiResponse(
             accessToken=promptInfo.accessToken,
