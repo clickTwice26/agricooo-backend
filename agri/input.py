@@ -25,7 +25,16 @@ class aiReplyInput(BaseModel):
     prompt : str
     chatId : str | None = None
     accessToken : str
+    apiToken : str
 
 class seekUserInfo(BaseModel):
+    accessToken: str
+
+class updateLocationInput(BaseModel):
+    accessToken: str
+    longitude: float
+    latitude: float
+
+class getFieldDetailsInput(BaseModel):
     accessToken: str
 

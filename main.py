@@ -5,7 +5,7 @@ from fastapi import FastAPI, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
-from agri.models import Base, User, ApiToken, aiResponse
+from agri.models import Base, User, ApiToken, aiResponse, Sensors
 from agri.program import *
 
 import agri.response as Response
@@ -40,6 +40,7 @@ def get_db():
 
 def userVerify(accessToken : str, db: Depends(get_db)) -> Tuple[bool, str]:
     userInfo = db.query(User).filter(User.accessToken == accessToken).first()
+    print(f"hello{userInfo.fields}")
     if userInfo is None:
         return False, "user not found"
     if userInfo.accountStatus != "active":
@@ -55,7 +56,8 @@ def tokenCreation(db: Depends(get_db), **kwargs) -> Tuple[bool, str]:
         newToken = ApiToken(
             expireTime=expireTime,
             uId=uId,
-            tokenStr=tokenStr
+            tokenStr=tokenStr,
+            creationTime=ctime("date")
         )
         db.add(newToken)
         db.commit()
@@ -72,6 +74,26 @@ def tokenVerify(apiToken : str, db: Depends(get_db)) -> Tuple[bool, str]:
     tokenInfo = db.query(ApiToken).filter(ApiToken.tokenStr == apiToken).first()
     if tokenInfo is None:
         return False, "token not found"
+    if tokenInfo.useCount > tokenInfo.requestLimit:
+        return False, "token is exceeded its limit"
+    if isExpired(tokenInfo.expireTime):
+        return False, "token is expired"
+    tokenInfo.useCount+=1
+    db.commit()
+    return True, "valid token"
+
+class UserInfo:
+    def __init__(self, accessToken : str, db: Depends(get_db)) -> None:
+        self.givenAccessToken = accessToken
+        self.getUserDetails(db)
+    def getUserDetails(self, db: Depends(get_db)):
+        userinfo = db.query(User).filter(User.accessToken == self.givenAccessToken).first()
+        print(userinfo.fields)
+        self.fullName = userinfo.fullName
+        self.email = userinfo.email
+        self.accessToken = userinfo.accessToken
+        self.phoneNumber = userinfo.phoneNumber
+        self.fields = userinfo.fields
 
 
 @app.get("/")
@@ -106,6 +128,11 @@ async def get_weather(locationInfo : Schemas.LocationInfo):
 @app.post("/chatWithAi")
 async def getReply(promptInfo : InputSchemas.aiReplyInput, db: Session = Depends(get_db)):
     if userVerify(promptInfo.accessToken, db):
+        tVerify, tMessage = tokenVerify(promptInfo.apiToken, db)
+        userinfo = UserInfo(promptInfo.accessToken, db)
+        if not tVerify:
+            return Response.ErrorMessage(errorMessage=tMessage, errorType="error", errorCode=1)
+
         if promptInfo.chatId == None:
             chats = ""
         else:
@@ -118,9 +145,11 @@ async def getReply(promptInfo : InputSchemas.aiReplyInput, db: Session = Depends
             promptHistory : list = []
             for i in chats:
                 promptHistory.append(i.promptStr)
+
             promptHistory = list(set(promptHistory))
             promptInfo.prompt = "\n".join(promptHistory)
             print(promptHistory)
+        promptInfo = f"My name is {userinfo.fullName}\n" + promptInfo
         aiReply : str = Handler.gemResponse(promptInfo.prompt)
         newAiResponse = aiResponse(
             accessToken=promptInfo.accessToken,
@@ -143,8 +172,52 @@ async def getInnerContent(language :str = "en"):
 
 @app.post("/userInfo")
 async def getUserinfo(acToken: InputSchemas.seekUserInfo, db: Session = Depends(get_db)):
-    checkExist = db.query(User).filter(User.accessToken == acToken.accessToken).first()
-    if checkExist:
-        return Response.UserinfoResponse(**checkExist.__dict__)
+    if userVerify(acToken.accessToken, db):
+        checkExist = db.query(User).filter(User.accessToken == acToken.accessToken).first()
+        if checkExist:
+            return Response.UserinfoResponse(**checkExist.__dict__)
+        else:
+            return Response.FlashMessage(message="account does not exist", category="warning")
     else:
-        return Response.FlashMessage(message="account does not exist", category="warning")
+        return Response.ErrorMessage(errorMessage="invalid access token", category="warning")
+
+@app.post("/updateLocation")
+async def updateLocation(newLocationInfo : InputSchemas.updateLocationInput, db: Session = Depends(get_db)):
+    if userVerify(newLocationInfo.accessToken):
+        userInfo = db.query(User).filter(User.accessToken == newLocationInfo.accessToken).first()
+        newLocation = f"{newLocationInfo.longitude},{newLocationInfo.latitude}"
+        userInfo.location = newLocation
+        try:
+            db.commit()
+            return Response.FlashMessage(message="location updated", category="success")
+        except Exception as error:
+            return Response.ErrorMessage(errorMessage=error, errorType="error", errorCode=1)
+    else:
+        return Response.FlashMessage(message="invalid access token", category="warning")
+
+@app.post("/getFieldDetails")
+async def getFieldDetails(fieldSeek : InputSchemas.getFieldDetailsInput, db: Session = Depends(get_db)):
+    if userVerify(fieldSeek.accessToken, db):
+        userinfo = db.query(User).filter(User.accessToken == fieldSeek.accessToken).first()
+        sensorList = db.query(Sensors).filter(Sensors.accessToken == fieldSeek.accessToken).all()
+        fieldData = []
+        for i in json.loads(userinfo.fields):
+            fieldAllSensor = []
+            for z in sensorList:
+                if z.belongsTo == i:
+                    fieldAllSensor.append(z.uId)
+
+            fieldWSensor = {
+                i : fieldAllSensor
+            }
+            fieldData.append(fieldWSensor)
+
+        return fieldData
+    else:
+        return Response.FlashMessage(message="invalid access token", category="warning")
+
+# @app.post("/addField")
+# async def addField()
+
+
+

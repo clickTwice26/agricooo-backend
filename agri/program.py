@@ -79,6 +79,21 @@ def addedTime(days : int, startTime : str = ctime("date")) -> str:
     return str(new_date.strftime(date_format))
 def getUuid() -> str:
     return str(uuid.uuid4().hex)
+
+def isExpired(expireDate : str):
+
+    expire_date_str = expireDate
+
+    expire_date = datetime.strptime(expire_date_str, "%d/%m/%y")
+
+    current_date = datetime.now()
+
+    if current_date > expire_date:
+        return True
+    else:
+        return False
+
+
 if __name__ == "__main__":
     # uIdGen("Salman Shariar 01232123223 example@gmail.com")
     print(ctime("date"))
