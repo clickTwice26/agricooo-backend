@@ -40,7 +40,7 @@ def get_db():
 
 def userVerify(accessToken : str, db: Depends(get_db)) -> Tuple[bool, str]:
     userInfo = db.query(User).filter(User.accessToken == accessToken).first()
-    print(f"hello{userInfo.fields}")
+    # print(f"hello{userInfo.fields}")
     if userInfo is None:
         return False, "user not found"
     if userInfo.accountStatus != "active":
