@@ -38,3 +38,8 @@ class updateLocationInput(BaseModel):
 class getFieldDetailsInput(BaseModel):
     accessToken: str
 
+
+class getAiCommentInput(BaseModel):
+    accessToken: str
+    context : str
+    apiToken : str

@@ -88,7 +88,7 @@ class UserInfo:
         self.getUserDetails(db)
     def getUserDetails(self, db: Depends(get_db)):
         userinfo = db.query(User).filter(User.accessToken == self.givenAccessToken).first()
-        print(userinfo.fields)
+        # print(userinfo.fields)
         self.fullName = userinfo.fullName
         self.email = userinfo.email
         self.accessToken = userinfo.accessToken
@@ -149,8 +149,8 @@ async def getReply(promptInfo : InputSchemas.aiReplyInput, db: Session = Depends
             promptHistory = list(set(promptHistory))
             promptInfo.prompt = "\n".join(promptHistory)
             # print(promptHistory)
-        promptInfo.prompt = f"Just remember my name {userinfo.fullName}\n" + promptInfo.prompt
-        # print(promptInfo.prompt)
+        promptInfo.prompt = f"My name {userinfo.fullName.split('  ')[0]}\n" + promptInfo.prompt
+        print(promptInfo.prompt)
         aiReply : str = Handler.gemResponse(promptInfo.prompt)
         newAiResponse = aiResponse(
             accessToken=promptInfo.accessToken,
@@ -184,7 +184,7 @@ async def getUserinfo(acToken: InputSchemas.seekUserInfo, db: Session = Depends(
 
 @app.post("/updateLocation")
 async def updateLocation(newLocationInfo : InputSchemas.updateLocationInput, db: Session = Depends(get_db)):
-    if userVerify(newLocationInfo.accessToken):
+    if userVerify(newLocationInfo.accessToken, db):
         userInfo = db.query(User).filter(User.accessToken == newLocationInfo.accessToken).first()
         newLocation = f"{newLocationInfo.longitude},{newLocationInfo.latitude}"
         userInfo.location = newLocation
@@ -214,6 +214,24 @@ async def getFieldDetails(fieldSeek : InputSchemas.getFieldDetailsInput, db: Ses
             fieldData.append(fieldWSensor)
 
         return fieldData
+    else:
+        return Response.FlashMessage(message="invalid access token", category="warning")
+
+
+@app.post("/getAiComment")
+async def getAiComment(aiCommentSeek : InputSchemas.getAiCommentInput, db: Session = Depends(get_db)):
+    if userVerify(aiCommentSeek.accessToken, db):
+        tVerify, tMessage = tokenVerify(aiCommentSeek.apiToken, db)
+        if tVerify:
+            aiCommentSeek.context+= "\n Reply in one sentence."
+            aiComment : str = Handler.gemResponse(aiCommentSeek.context)
+            return {
+                "comment" : aiComment
+            }
+
+        else:
+            return Response.ErrorMessage(errorMessage=tMessage, category="warning")
+
     else:
         return Response.FlashMessage(message="invalid access token", category="warning")
 
