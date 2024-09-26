@@ -41,8 +41,10 @@ def get_db():
 def userVerify(accessToken : str, db: Depends(get_db)) -> Tuple[bool, str]:
     userInfo = db.query(User).filter(User.accessToken == accessToken).first()
     if userInfo is None:
+        print(f"User not found")
         return False
     if userInfo.accountStatus != "active":
+        print(f"Account not active")
         return False
     return True
 
@@ -204,7 +206,7 @@ async def getFieldDetails(fieldSeek : InputSchemas.getFieldDetailsInput, db: Ses
         for i in json.loads(userinfo.fields):
             fieldAllSensor = []
             for z in sensorList:
-                if z.belongsTo == i:
+                if z.fieldId == i:
                     fieldAllSensor.append(z.uId)
 
             fieldWSensor = {
@@ -254,10 +256,44 @@ async def addField(fieldInfo : InputSchemas.addFieldInput, db: Session = Depends
 
             db.add(newFieldData)
             db.commit()
-            return Response.FlashMessage(message="field added", category="success")
+            return Response.FlashMessage(message="field added", category="success", info={
+                "fieldId" : field_uid,
+            })
         except Exception as error:
             return Response.ErrorMessage(errorMessage=f"{error}", errorType="error", errorCode=1)
 
 
     else:
         return Response.ErrorMessage(errorMessage="invalid access token", category="warning")
+
+@app.post("/addSensor")
+async def addSensor(newSensorDetails : InputSchemas.addSensorInput, db: Session = Depends(get_db)):
+    if userVerify(newSensorDetails.accessToken, db):
+        try:
+            newSensorId = getTid("ahdkjahs123123")
+            newSensor = Sensors(
+                uId = newSensorId,
+                **newSensorDetails.model_dump()
+            )
+            db.add(newSensor)
+            db.commit()
+            return Response.FlashMessage(message=f"sensor_added_id_{newSensorId}", category="success")
+        except Exception as error:
+            return Response.ErrorMessage(errorMessage=f"{error}", errorType="error", errorCode=1)
+
+    else:
+        return Response.FlashMessage(message="invalid access token", category="warning")
+@app.post("/recoverAccessToken")
+async def recoverAccessToken(userInfo : InputSchemas.recoverAccessTokenInput, db: Session = Depends(get_db)):
+    lostUser = db.query(User).filter(User.phoneNumber == userInfo.phoneNumber).first()
+    if lostUser is None:
+        return Response.FlashMessage(message="User doesn't exist or didn't demand any recover requests to server", category="warning")
+    else:
+        if userInfo.otpCode == 99:
+            return Response.FlashMessage(message=f"recover successful", category="warning", info={
+                "accessToken" : lostUser.accessToken
+            })
+        else:
+            return Response.FlashMessage(message=f"invalid otp", category="warning", info={})
+
+

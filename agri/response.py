@@ -15,6 +15,7 @@ class ErrorMessage(BaseModel):
     errorCode : int | None = 0
 class FlashMessage(BaseModel):
     message : str = "Something went wrong"
+    info : dict | None = {}
     category : Literal["info", "error", "success", "warning"] | None  = "info"
 
 class aiTextResponse(BaseModel):

@@ -48,4 +48,13 @@ class addFieldInput(BaseModel):
     width : float | int
     height : float | int
     cropType : str | None = None
-    field_Name : str
+    fieldName : str
+class addSensorInput(BaseModel):
+    accessToken: str
+    sensorName : str
+    fieldId : str
+    fieldName : str
+
+class recoverAccessTokenInput(BaseModel):
+    phoneNumber : str
+    otpCode : int

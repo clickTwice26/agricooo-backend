@@ -1,3 +1,5 @@
+from enum import unique
+
 from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Text
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
@@ -13,7 +15,7 @@ class User(Base):
     phoneNumber = Column(String(20), unique=True, nullable=False)
     email = Column(String(100), unique=False, nullable=False)
     currentLocation =Column(String(100), unique=False, nullable=True)
-    accountStatus = Column(String(20), unique=False, nullable=True) #["active", "blocked", "timedOut"]
+    accountStatus = Column(String(20), unique=False, nullable=True, default="active") #["active", "blocked", "timedOut"]
     accessToken = Column(String(100), unique=True, nullable=False)
     accountCreationIp = Column(String(100), unique=False, nullable=True)
     clientDeviceInfo = Column(String(300), unique=False, nullable=True)
@@ -47,10 +49,10 @@ class Sensors(Base):
     id = Column(Integer, primary_key=True)
     uId = Column(String(50), unique=True)
     accessToken = Column(String(100), unique=True, nullable=False)
-    type = Column(String(50), unique=False, nullable=True)
-    sensorsSchemas = Column(Text, unique=False, nullable=True, default="[]")
-    status = Column(String(50), unique=False, nullable=True)
-    belongsTo = Column(String(50), unique=False, nullable=True)
+    sensorName = Column(String(100), unique=False, nullable=True)
+    status = Column(String(50), unique=False, nullable=True, default="off")
+    fieldName = Column(String(50), unique=False, nullable=True)
+    fieldId = Column(String(50), unique=False, nullable=True)
 
 class SensorData(Base):
     __tablename__ = 'sensordata'
