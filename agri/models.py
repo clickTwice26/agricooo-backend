@@ -63,6 +63,12 @@ class SensorData(Base):
 class Fields(Base):
     __tablename__ = 'fields'
     id = Column(Integer, primary_key=True)
-    uId = Column(String(50), unique=True)
+    uId = Column(String(50), unique=True, index=True)
     cropType = Column(String(50), unique=False, nullable=True)
-    area = Column(Float(50), unique=False, nullable=True)
+    width = Column(Float, unique=False, nullable=True)
+    height = Column(Float, unique=False, nullable=True)
+    accessToken = Column(String(100), unique=False, nullable=True)
+    fieldName = Column(String(100), unique=False, nullable=False)
+
+
+

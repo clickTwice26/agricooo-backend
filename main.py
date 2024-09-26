@@ -5,7 +5,7 @@ from fastapi import FastAPI, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
-from agri.models import Base, User, ApiToken, aiResponse, Sensors
+from agri.models import Base, User, ApiToken, aiResponse, Sensors, Fields
 from agri.program import *
 
 import agri.response as Response
@@ -40,12 +40,11 @@ def get_db():
 
 def userVerify(accessToken : str, db: Depends(get_db)) -> Tuple[bool, str]:
     userInfo = db.query(User).filter(User.accessToken == accessToken).first()
-    # print(f"hello{userInfo.fields}")
     if userInfo is None:
-        return False, "user not found"
+        return False
     if userInfo.accountStatus != "active":
-        return False, "account is not active"
-    return True, "verification success"
+        return False
+    return True
 
 def tokenCreation(db: Depends(get_db), **kwargs) -> Tuple[bool, str]:
     try:
@@ -209,7 +208,8 @@ async def getFieldDetails(fieldSeek : InputSchemas.getFieldDetailsInput, db: Ses
                     fieldAllSensor.append(z.uId)
 
             fieldWSensor = {
-                i : fieldAllSensor
+                'field_uid' : i,
+                'sensor_list' : fieldAllSensor
             }
             fieldData.append(fieldWSensor)
 
@@ -235,8 +235,29 @@ async def getAiComment(aiCommentSeek : InputSchemas.getAiCommentInput, db: Sessi
     else:
         return Response.FlashMessage(message="invalid access token", category="warning")
 
-# @app.post("/addField")
-# async def addField()
 
 
 
+@app.post("/addField")
+async def addField(fieldInfo : InputSchemas.addFieldInput, db: Session = Depends(get_db)):
+    if userVerify(fieldInfo.accessToken, db):
+        try:
+            field_uid = getTid("ahdkjahs123123")
+            userinfo = db.query(User).filter(User.accessToken == fieldInfo.accessToken).first()
+            userinfo.fields = json.loads(userinfo.fields)
+            userinfo.fields.append(field_uid)
+            userinfo.fields = json.dumps(userinfo.fields)
+            newFieldData = Fields(
+                uId = field_uid,
+                **fieldInfo.model_dump()
+            )
+
+            db.add(newFieldData)
+            db.commit()
+            return Response.FlashMessage(message="field added", category="success")
+        except Exception as error:
+            return Response.ErrorMessage(errorMessage=f"{error}", errorType="error", errorCode=1)
+
+
+    else:
+        return Response.ErrorMessage(errorMessage="invalid access token", category="warning")

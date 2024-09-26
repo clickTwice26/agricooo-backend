@@ -43,3 +43,9 @@ class getAiCommentInput(BaseModel):
     accessToken: str
     context : str
     apiToken : str
+class addFieldInput(BaseModel):
+    accessToken: str
+    width : float | int
+    height : float | int
+    cropType : str | None = None
+    field_Name : str
