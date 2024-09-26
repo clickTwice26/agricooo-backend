@@ -161,3 +161,4 @@ agri/sens.py
 .idea/
 database/
 res/
+alembic/
