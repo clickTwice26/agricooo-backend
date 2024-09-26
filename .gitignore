@@ -147,7 +147,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-research/
 # pytype static type analyzer
 .pytype/
 
@@ -161,3 +160,4 @@ agri/sens.py
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
 database/
+research/
