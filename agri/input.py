@@ -53,8 +53,18 @@ class addSensorInput(BaseModel):
     accessToken: str
     sensorName : str
     fieldId : str
-    fieldName : str
 
 class recoverAccessTokenInput(BaseModel):
     phoneNumber : str
     otpCode : int
+
+class SensorDataPush(BaseModel):
+    accessToken: str
+    sensorId: str
+    information: str | None = None
+    sensorData: dict
+
+class SensorDataSeek(BaseModel):
+    accessToken: str
+    sensorId: str
+

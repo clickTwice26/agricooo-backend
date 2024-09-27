@@ -30,4 +30,8 @@ class UserinfoResponse(BaseModel):
     fullName : str
     email : str
     phoneNumber: str
-    currentLocation : str |None = None
+    currentLocation : str | None = None
+
+class SensorDataResponse(BaseModel):
+    responseTime : str
+    sensorData : dict

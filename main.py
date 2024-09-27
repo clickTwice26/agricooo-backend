@@ -5,7 +5,9 @@ from fastapi import FastAPI, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
-from agri.models import Base, User, ApiToken, aiResponse, Sensors, Fields
+
+from agri.input import SensorDataPush
+from agri.models import Base, User, ApiToken, aiResponse, Sensors, Fields, SensorData
 from agri.program import *
 
 import agri.response as Response
@@ -296,4 +298,36 @@ async def recoverAccessToken(userInfo : InputSchemas.recoverAccessTokenInput, db
         else:
             return Response.FlashMessage(message=f"invalid otp", category="warning", info={})
 
+@app.post("/sensorDataPush")
+async def pushSensorData(sensorData : InputSchemas.SensorDataPush, db: Session = Depends(get_db)):
+    if userVerify(sensorData.accessToken, db):
+        
+        try:
+            newSensorData = SensorData(
+            lastUpdatedTime = ctime("both"),
+            **sensorData.model_dump()
+            )
+            db.add(newSensorData)
+            db.commit()
+            return Response.FlashMessage(message=f"sensor_data_pushed_into_{sensorData.sensorId}", category="success", info={
+                "sensorId" : sensorData.sensorId
+            })
+        except Exception as error:
+            return Response.ErrorMessage(errorMessage=f"{error}", errorType="error", errorCode=1)
+        
+    else:
+        return Response.ErrorMessage(errorMessage="invalid access token", category="warning")
+@app.post("/getSensorData")
+async def getSensorData(sensorSeek: InputSchemas.SensorDataSeek, db: Session = Depends(get_db)):
+    if userVerify(sensorSeek.accessToken, db):
+        sensorData = db.query(SensorData).filter(SensorData.sensorId == sensorSeek.sensorId).first()
 
+        sensorDataObject = {
+
+        }
+        sensorDataObject.update(sensorData.sensorData)
+        return Response.SensorDataResponse(responseTime=ctime("both"), sensorData=sensorDataObject)
+
+
+    else:
+        return Response.FlashMessage(message="invalid access token", category="warning")

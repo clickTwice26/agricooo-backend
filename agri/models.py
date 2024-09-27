@@ -1,6 +1,7 @@
 from enum import unique
 
-from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Text
+from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Text,TypeDecorator
+import json
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
 
@@ -51,16 +52,38 @@ class Sensors(Base):
     accessToken = Column(String(100), unique=True, nullable=False)
     sensorName = Column(String(100), unique=False, nullable=True)
     status = Column(String(50), unique=False, nullable=True, default="off")
-    fieldName = Column(String(50), unique=False, nullable=True)
     fieldId = Column(String(50), unique=False, nullable=True)
 
+
+
+class JSONEncodedDict(TypeDecorator):
+    """Custom type for automatically serializing and deserializing JSON strings."""
+    impl = Text
+
+    def process_bind_param(self, value, dialect):
+        """Convert Python dict to JSON string before storing in the database."""
+        if value is None:
+            return None
+        return json.dumps(value)
+
+    def process_result_value(self, value, dialect):
+        """Convert JSON string back to Python dict after retrieving from the database."""
+        if value is None:
+            return None
+        return json.loads(value)
+
+# Now use this custom type in your model
 class SensorData(Base):
     __tablename__ = 'sensordata'
+
     id = Column(Integer, primary_key=True)
-    uId = Column(String(50), unique=True)
-    sensorData = Column(Text, unique=False, nullable=True)
+    sensorId = Column(String(50), unique=False, index=True)
+    accessToken = Column(String(100), unique=False, nullable=False)
+    information = Column(Text, unique=False, nullable=True)
+    sensorData = Column(JSONEncodedDict, unique=False, nullable=True)  # Use custom type
     lastUpdatedTime = Column(String(200), unique=False, nullable=True)
-    belongsTo = Column(String(50), unique=False, nullable=True)
+    fieldId = Column(String(50), unique=False, nullable=True)
+
 
 class Fields(Base):
     __tablename__ = 'fields'
