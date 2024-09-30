@@ -17,7 +17,11 @@ import agri.constants as Constants
 import agri.schemas as Schemas
 import agri.input as InputSchemas
 
+from fastapi.staticfiles import StaticFiles
 
+app = FastAPI()
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
 app = FastAPI()
 
 app.add_middleware(
@@ -322,9 +326,7 @@ async def getSensorData(sensorSeek: InputSchemas.SensorDataSeek, db: Session = D
     if userVerify(sensorSeek.accessToken, db):
         sensorData = db.query(SensorData).filter(SensorData.sensorId == sensorSeek.sensorId).first()
 
-        sensorDataObject = {
-
-        }
+        sensorDataObject = {}
         sensorDataObject.update(sensorData.sensorData)
         return Response.SensorDataResponse(responseTime=ctime("both"), sensorData=sensorDataObject)
 
